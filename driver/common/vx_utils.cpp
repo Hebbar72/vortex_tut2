@@ -106,6 +106,7 @@ extern int vx_dump_perf(vx_device_h device, FILE* stream) {
   uint64_t cycles = 0;
 
 #ifdef PERF_ENABLE    
+  uint64_t warp_counter = 0;
   // PERF: pipeline stalls
   uint64_t ibuffer_stalls = 0;
   uint64_t scoreboard_stalls = 0;
@@ -170,6 +171,9 @@ extern int vx_dump_perf(vx_device_h device, FILE* stream) {
     cycles = std::max<uint64_t>(cycles_per_core, cycles);
 
   #ifdef PERF_ENABLE
+    uint64_t warp_count_per_core = get_csr_64(staging_ptr, CSR_MPM_WARP_COUNT);
+    if (num_cores > 1) fprintf(stream, "PERF: core%d: warp count=%ld\n", core_id, warp_count_per_core);
+    warp_counter += warp_count_per_core;
     // PERF: pipeline    
     // ibuffer_stall
     uint64_t ibuffer_stalls_per_core = get_csr_64(staging_ptr, CSR_MPM_IBUF_ST);
@@ -328,6 +332,7 @@ extern int vx_dump_perf(vx_device_h device, FILE* stream) {
   fprintf(stream, "PERF: smem bank stalls=%ld (utilization=%d%%)\n", smem_bank_stalls, smem_bank_utilization);
   fprintf(stream, "PERF: memory requests=%ld (reads=%ld, writes=%ld)\n", (mem_reads + mem_writes), mem_reads, mem_writes);
   fprintf(stream, "PERF: memory average latency=%d cycles\n", mem_avg_lat);
+  fprintf(stream, "PERF: total warp count=%ld cycles\n", warp_counter);
 #ifdef EXT_TEX_ENABLE
   int tex_avg_lat = (int)(double(tex_mem_lat) / double(tex_mem_reads));
   fprintf(stream, "PERF: tex memory reads=%ld\n", tex_mem_reads);

@@ -15,6 +15,10 @@ module VX_lsu_unit #(
     // inputs
     VX_lsu_req_if.slave     lsu_req_if,
 
+    `ifdef PERF_ENABLE
+    VX_perf_memsys_if     perf_memsys_if,
+    `endif
+
     // outputs
     VX_commit_if.master     ld_commit_if,
     VX_commit_if.master     st_commit_if
@@ -307,7 +311,20 @@ module VX_lsu_unit #(
     `SCOPE_ASSIGN (dcache_rsp_uuid,  rsp_uuid);    
     `SCOPE_ASSIGN (dcache_rsp_data,  dcache_rsp_if.data);
     `SCOPE_ASSIGN (dcache_rsp_tag,   mbuf_raddr);
-
+`ifdef PERF_ENABLE
+    reg [`PERF_CTR_BITS-1:0] perf_w_count;
+    always @(posedge clk) begin
+	if(reset) begin
+	    perf_w_count <= `PERF_CTR_BITS'd0;
+        end 
+	else begin
+	    if(req_is_dup) begin
+		perf_w_count <= perf_w_count + `PERF_CTR_BITS'd1;
+	    end
+	end
+    end
+    assign perf_memsys_if.w_count = perf_w_count;
+`endif
 `ifndef SYNTHESIS
     reg [`LSUQ_SIZE-1:0][(`NW_BITS + 32 + `NR_BITS + `UUID_BITS + 64 + 1)-1:0] pending_reqs;
     wire [63:0] delay_timeout = 10000 * (1 ** (`L2_ENABLE + `L3_ENABLE));

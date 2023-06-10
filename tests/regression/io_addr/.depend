@@ -1,0 +1,2 @@
+main.o: main.cpp /home/vagrant/vortex_tut2/driver/include/vortex.h \
+ ../../../hw/VX_config.h common.h
